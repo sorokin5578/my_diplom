@@ -1,6 +1,7 @@
 import requests
 import re
 import datetime
+from timeit import default_timer as timer
 from bs4 import BeautifulSoup as BS
 
 
@@ -20,12 +21,17 @@ def get_news_finviz(r):
     cnt = 0
     for news in el[0].select("tr"):
         news_time = news.next.text
-        time_mass.append(news_time)
-        if not (re.search(r'[A-Z]', news_time[0])) and cnt != 0:
-            time_mass[cnt] = (time_mass[cnt - 1])[0:9] + " " + news_time
-        if delta_time_for_finviz(time_mass[cnt]):
-            dict_news.update({news.text.replace(u'\xa0\xa0', u' '): news.select_one("a", href=True).get("href")})
-        cnt += 1
+        if re.search(r'[A-Z]', news_time[0]):
+            if delta_time_for_finviz(news_time):
+                dict_news.update({news.text.replace(u'\xa0\xa0', u' ').replace(u'\xa0', u' '): news.select_one("a",
+                                                                                                               href=True).get(
+                    "href")})
+            else:
+                break
+        else:
+            dict_news.update({news.text.replace(u'\xa0\xa0', u' ').replace(u'\xa0', u' '): news.select_one("a",
+                                                                                                           href=True).get(
+                "href")})
     return dict_news
 
 
@@ -42,7 +48,7 @@ def delta_time_for_finviz(then):
     now = datetime.datetime.today().strftime("%b-%d-%y %I:%M%p")
     if int(now[7:9]) - int(then[7:9]) == 0:
         if now[0:3] == then[0:3]:
-            if int(now[4:6]) - int(then[4:6]) < 3:
+            if int(now[4:6]) - int(then[4:6]) < 2:
                 # if int(now[10:12])-int(then[10:12])<2:
                 #     return True
                 return True
@@ -114,14 +120,16 @@ def get_info_stock(link):
 # print(d.get("Tesla Motors Inc"))
 # print(d.get("Zoetis Inc"))
 
-
+start_time = timer()
 d = get_link_stock(["NFLX", "Tesla Motors Inc", "Apple Inc."])
-for key in d:
-    print("Company: " + d.get(key)[1])
-    print("Ticker: " + d.get(key)[2])
-    print("Link: " + d.get(key)[0])
-    info = get_info_stock(d.get(key)[0])
-    for j in range(0, 2):
-        for item in info[j].items():
-            print(item)
-    print("------------")
+print(d)
+print(timer() - start_time)
+# for key in d:
+#     print("Company: " + d.get(key)[1])
+#     print("Ticker: " + d.get(key)[2])
+#     print("Link: " + d.get(key)[0])
+#     info = get_info_stock(d.get(key)[0])
+#     for j in range(0, 2):
+#         for item in info[j].items():
+#             print(item)
+#     print("------------")
