@@ -120,10 +120,11 @@ def get_info_stock(link):
 # print(d.get("Tesla Motors Inc"))
 # print(d.get("Zoetis Inc"))
 
-start_time = timer()
-d = get_link_stock(["NFLX", "Tesla Motors Inc", "Apple Inc."])
-print(d)
-print(timer() - start_time)
+# start_time = timer()
+# d = get_link_stock(["NFLX", "Tesla Motors Inc", "Apple Inc."])
+# print(d)
+# print(timer() - start_time)
+
 # for key in d:
 #     print("Company: " + d.get(key)[1])
 #     print("Ticker: " + d.get(key)[2])
@@ -133,3 +134,4 @@ print(timer() - start_time)
 #         for item in info[j].items():
 #             print(item)
 #     print("------------")
+
