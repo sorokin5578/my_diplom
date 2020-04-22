@@ -1,9 +1,7 @@
 import requests
 import re
 import datetime
-import threading
 from bs4 import BeautifulSoup as BS
-from threading import Thread
 from multiprocessing import Pool
 
 """Get page"""
@@ -16,13 +14,6 @@ def get_finviz_page(ticker):
         return []
 
 
-# def return_new_page_ffin():
-#     page = []
-#     for i in range(1, 29):
-#         page.append("https://ffin.ru/market/directory/data/?PAGEN_1=" + str(i))
-#     return page
-
-
 def return_new_page_ffin(i):
     return "https://ffin.ru/market/directory/data/?PAGEN_1=" + str(i)
 
@@ -30,38 +21,7 @@ def return_new_page_ffin(i):
 """End Get page"""
 
 
-# def get_link2(arr):
-#     """Get link for stock, which we find"""
-#     dict_stock = {}
-#     link, find_string = arr[0], arr[1]
-#     try:
-#         r = requests.get(link)
-#         html = BS(r.content, 'html.parser')
-#         el = html.select("table.directory-list_table")
-#         ticker = el[0].select("td", text=True)
-#         count_tic = 2
-#         for a_tag in el[0].select("a", href=True):
-#             if len(find_string) == 0:
-#                 break
-#             if not (re.search(r'([A-Za-z0-9_\&\.\,\'\(\)])',
-#                               a_tag.text[0])) or "ETF" in a_tag.text:
-#                 continue
-#             for str_key in find_string:
-#                 tic = ticker[count_tic].text.replace(u'\n', u'').replace(u' ', u'')
-#                 if str_key.lower() == a_tag.text.lower() or str_key.lower() == tic.lower():
-#                     dict_stock.update({str_key: ["https://ffin.ru" + a_tag.get("href"), a_tag.text, tic]})
-#                     find_string.remove(str_key)
-#                     continue
-#             count_tic += 9
-#     except:
-#         get_info_stock({},{})
-#     for key in dict_stock:
-#         get_info_stock(dict_stock.get(key)[0], dict_stock)
-#     # get_info_stock(dict_stock)
-#     # return dict_stock
-
-
-def get_link2(arr):
+def get_link(arr):
     """Get link for stock, which we find"""
     dict_stock = {}
     link, str_key = arr[0], arr[1]
@@ -81,7 +41,7 @@ def get_link2(arr):
                 break
             count_tic += 9
     except:
-        get_info_stock({},{})
+        get_info_stock({}, {})
     for key in dict_stock:
         get_info_stock(dict_stock.get(key)[0], dict_stock)
 
@@ -113,24 +73,8 @@ def get_info_stock(link, dict_res):
         dict_news_finviz = get_news_finviz(get_finviz_page(ticker[ticker.find("(") + 1:len(ticker) - 1]))
         dict_news.update(dict_news_finviz)
     except:
-        sout2({}, {}, {})
-    sout2(dict_res, dict_stock, dict_news)
-    # return [dict_stock, dict_news]
-
-
-def sout2(info, stock, news):
-    l = threading.Lock()
-    l.acquire()
-    for key in info:
-        print("Company: " + info.get(key)[1])
-        print("Ticker: " + info.get(key)[2])
-        print("Link: " + info.get(key)[0])
-    for key in stock.items():
-        print(key)
-    for key in news.items():
-        print(key)
-    print("--------")
-    l.release()
+        sout({}, {}, {})
+    sout(dict_res, dict_stock, dict_news)
 
 
 def get_news_finviz(r):
@@ -139,8 +83,6 @@ def get_news_finviz(r):
     try:
         html = BS(r.content, 'html.parser')
         el = html.select("table.fullview-news-outer")
-        time_mass = []
-        cnt = 0
         for news in el[0].select("tr"):
             news_time = news.next.text
             if re.search(r'[A-Z]', news_time[0]):
@@ -164,13 +106,13 @@ def get_news_finviz(r):
 """Get delta_time block"""
 
 
-def delta_time(then):
-    now = datetime.datetime.today().strftime("%d.%m.%Y")
-    if int(now[6:10]) - int(then[6:10]) == 0:
-        if int(now[3:5]) - int(then[3:5]) == 0:
-            if int(now[0:2]) - int(then[0:2]) < 10:
-                return True
-    return False
+# def delta_time(then):
+#     now = datetime.datetime.today().strftime("%d.%m.%Y")
+#     if int(now[6:10]) - int(then[6:10]) == 0:
+#         if int(now[3:5]) - int(then[3:5]) == 0:
+#             if int(now[0:2]) - int(then[0:2]) < 10:
+#                 return True
+#     return False
 
 
 def delta_time_for_finviz_date(then):
@@ -179,17 +121,23 @@ def delta_time_for_finviz_date(then):
         if now[0:3] == then[0:3]:
             if int(now[4:6]) - int(then[4:6]) < 1:
                 return True
-                # hour_now = int(now[10:12])
-                # if then[15:17] == "PM":
-                #     hour_then = int(then[10:12]) + 12
-                # else:
-                #     hour_then = int(then[10:12])
-                # if hour_now - hour_then < 12:
-                #     return True
     return False
 
 
 """End delta_time block"""
+
+
+def sout(info, stock, news):
+    """Out res"""
+    for key in info:
+        print("Company: " + info.get(key)[1])
+        print("Ticker: " + info.get(key)[2])
+        print("Link: " + info.get(key)[0])
+    for key in stock.items():
+        print(key)
+    for key in news.items():
+        print(key)
+    print("--------")
 
 
 def main(find_str):
@@ -197,15 +145,16 @@ def main(find_str):
     Запускаем программу
     """
     res = []
-    for key_str in find_string:
+    for key_str in find_str:
         for i in range(1, 29):
             res.append([return_new_page_ffin(i), key_str])
-    with Pool(20) as p:
-        p.map(get_link2, res)
-        # p.apply_async(get_link2, res)
+    with Pool(30) as p:
+        p.map(get_link, res)
+        p.close()
 
 
 if __name__ == "__main__":
-    find_string = ["NFLX", "Tesla Motors Inc", "Apple Inc.", "NKE"]
+    find_string = ["NFLX", "Tesla Motors Inc"]
+    # find_string = ["NFLX", "Tesla Motors Inc", "Apple Inc.", "NKE"]
     # find_string = ["NFLX", "MUR", "MYL", "NKE"]
     main(find_string)
