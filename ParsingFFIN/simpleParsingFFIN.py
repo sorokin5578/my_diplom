@@ -135,3 +135,9 @@ def get_info_stock(link):
 #             print(item)
 #     print("------------")
 
+now = datetime.datetime.today().strftime("%d.%m.%Y %I:%M%p")
+now.strftime("%y%m%d %H:%M")
+print(now)
+# str="Apr-22-20 05:24AM".strftime("%y%m%d %H:%M")
+# # # print(str)
+
