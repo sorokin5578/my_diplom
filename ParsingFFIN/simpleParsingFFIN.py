@@ -143,9 +143,13 @@ def make_all(find_str):
     #     for item2 in el[1]:
     #         print(item2 + " " + el[1].get(item2))
     #     cnt += 1
+    #     print("-----------")
 
 
+# make_all(["ARG"])
+# make_all(["NFLX", "ARG", "Apple Inc."])
+# d = {1: [], 2: []}
+# d.get(1).append(85)
+# d.update({1:96})
+# print(d)
 
-
-
-# make_all(["NFLX", "фыва", "Apple Inc."])
