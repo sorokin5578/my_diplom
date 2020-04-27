@@ -51,28 +51,55 @@ def get_link_stock(find_string):
 
 def get_info_stock(link):
     dict_news = {}
+    dict_news_finviz={}
     dict_stock = {}
     try:
         r = requests.get(link)
         html = BS(r.content, 'html.parser')
         el = html.select("table.td-last-right")
-        ticker = html.select_one("h1", class_="quotes-company_title").text.replace(u'\n', u'').replace(u' ', u'')
-        grow_index = el[0].select_one("td.lastTradeChange").text.replace(u'\n', u'').replace(u' ', u'')
-        grow = "down"
-        if not ("-" in grow_index):
-            grow = "up"
-        dict_stock.update({"Последняя сделка": el[0].select_one("td.lastTradePrice").text.replace(u'\n', u'')})
+        try:
+            ticker = html.select_one("h1", class_="quotes-company_title").text.replace(u'\n', u'').replace(u' ', u'')
+        except:
+            ticker=""
+        try:
+            grow_index = el[0].select_one("td.lastTradeChange").text.replace(u'\n', u'').replace(u' ', u'')
+            grow = "down"
+            if not ("-" in grow_index):
+                grow = "up"
+        except:
+            grow, grow_index = "Неизвестно", ""
+
+        try:
+            dict_stock.update({"Последняя сделка": el[0].select_one("td.lastTradePrice").text.replace(u'\n', u'')})
+        except:
+            dict_stock.update({"Последняя сделка": "Неизвестно"})
+
         dict_stock.update({"Изменение": [grow, grow_index]})
-        dict_stock.update({"Дата торгов": el[0].select_one("td.lastTradeDate").text.replace(u'\n', u'')})
-        dict_stock.update({"Потенциал роста": el[0].select_one("td.lastTradePotential").text.replace(u'\n', u'')})
-        dict_stock.update({"Рекомендации": el[0].find_all("span", text=True)[0].text})
+
+        try:
+            dict_stock.update({"Дата торгов": el[0].select_one("td.lastTradeDate").text.replace(u'\n', u'')})
+        except:
+            dict_stock.update({"Дата торгов": "Неизвестно"})
+
+        try:
+            dict_stock.update({"Потенциал роста": el[0].select_one("td.lastTradePotential").text.replace(u'\n', u'')})
+        except:
+            dict_stock.update({"Потенциал роста": "Неизвестно"})
+
+        try:
+            dict_stock.update({"Рекомендации": el[0].find_all("span", text=True)[0].text})
+        except:
+            dict_stock.update({"Рекомендации": "Неизвестно"})
+
         # news = html.select("div.widget_cont")
         # for j in range(2, 4):
         #     for n in news[j].select("li", id=True):
         #         name_news = n.text.replace(u'\n', u' ')
         #         if delta_time(name_news[1:11]):
         #             dict_news.update({name_news: "https://ffin.ru" + n.select_one("a", href=True).get("href")})
-        dict_news_finviz = get_news_finviz(get_finviz_page(ticker[ticker.find("(") + 1:len(ticker) - 1]))
+        finviz_page=get_finviz_page(ticker[ticker.find("(") + 1:len(ticker) - 1])
+        if finviz_page:
+            dict_news_finviz = get_news_finviz(finviz_page)
         dict_news.update(dict_news_finviz)
     except:
         return []
