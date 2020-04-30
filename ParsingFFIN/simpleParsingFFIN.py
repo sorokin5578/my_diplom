@@ -98,8 +98,7 @@ def get_info_stock(link):
         #         if delta_time(name_news[1:11]):
         #             dict_news.update({name_news: "https://ffin.ru" + n.select_one("a", href=True).get("href")})
         finviz_page=get_finviz_page(ticker[ticker.find("(") + 1:len(ticker) - 1])
-        if finviz_page:
-            dict_news_finviz = get_news_finviz(finviz_page)
+        dict_news_finviz = get_news_finviz(finviz_page)
         dict_news.update(dict_news_finviz)
     except:
         return []
@@ -174,7 +173,8 @@ def make_all(find_str):
 
 
 # make_all(["ARG"])
-# make_all(["NFLX", "ARG", "Apple Inc."])
+# make_all(["NFLX", "TSLA", "Apple Inc."])
+# make_all(["Apple Inc."])
 # d = {1: [], 2: []}
 # d.get(1).append(85)
 # d.update({1:96})
