@@ -15,14 +15,17 @@ import mysql.connector
 
 
 def get_connection():
-    db = mysql.connector.connect(
-        host="localhost",
-        port="3307",
-        user="root",
-        password="root",
-        database="users_stocks"
-    )
-    return db
+    try:
+        db = mysql.connector.connect(
+            host="localhost",
+            port="3307",
+            user="root",
+            password="root",
+            database="users_stocks"
+        )
+        return db
+    except:
+        return []
 
 
 def add_new_user(user_id, user_name, stocks):

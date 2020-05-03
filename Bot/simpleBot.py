@@ -1,4 +1,5 @@
 import telebot
+from telebot import types
 from Bot.Config import TOKEN
 from DBConnector.simpleDB import add_new_user, return_user, del_user
 from ParsingFFIN.simpleParsingFFIN import make_all
@@ -9,6 +10,12 @@ res = {}
 
 @bot.message_handler(commands=['start'])
 def help_command(massage):
+    # murkup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    # item1 = types.KeyboardButton("🔎Поиск новостей ")
+    # item2 = types.KeyboardButton("💼Ваш портфель")
+    # item3 = types.KeyboardButton("🆕Задать новый портфель")
+    # murkup.add(item1, item2, item3)
+
     user_from_db = return_user(massage.chat.id)
     if not user_from_db:
         res.update({massage.chat.id: []})
@@ -17,10 +24,11 @@ def help_command(massage):
         bot.send_message(massage.chat.id, "https://ffin.ru/market/directory/data/")
     else:
         res.update({user_from_db[0]: user_from_db[2:]})
-        bot.send_message(massage.chat.id, "Здравствуйте, {0.first_name}."
+        bot.send_message(massage.chat.id, "Здравствуйте, <b>{0.first_name}</b>."
                                           "\nВы уже общались с ботом, чтобы посмотреть свой портфель нажмите /my_bag."
                                           "\nЧтобы получить последние новости нажмите /info."
-                                          "\nЧтобы изменить свой портфель нажмите /change.".format(massage.from_user))
+                                          "\nЧтобы изменить свой портфель нажмите /change.".format(massage.from_user),
+                         parse_mode='html')
 
 
 @bot.message_handler(commands=['help'])
@@ -54,7 +62,7 @@ def get_info(massage):
         if not user_from_db:
             add_new_user(massage.from_user.id, massage.from_user.first_name, res.get(massage.chat.id))
         else:
-            res.update({user_from_db[0]:user_from_db[2:]})
+            res.update({user_from_db[0]: user_from_db[2:]})
         bot.send_message(massage.chat.id, "Пожалуйста, подождите немного, я ищу 🔎")
         length = len(res.get(massage.chat.id))
         arr = make_all(res.get(massage.chat.id))
@@ -92,7 +100,7 @@ def change_bag(massage):
             bot.send_message(massage.chat.id, "{0.first_name}, ваш портфель акций был удален."
                                               "\nВведите название или тикер акций (до 5  штук), "
                                               "затем нажмите /done".format(massage.from_user))
-            res.update({massage.chat.id:[]})
+            res.update({massage.chat.id: []})
     except:
         bot.send_message(massage.chat.id, "Упс, что-то пошло не так😢")
 
@@ -130,7 +138,7 @@ def send_info(arr, length, chat_id):
     info_stock = []
     for key in arr[0]:
         info_stock.clear()
-        info_stock.append("🏦 Компания: " + arr[0].get(key)[1])
+        info_stock.append("<b>🏦 Компания:</b> " + arr[0].get(key)[1])
         info_stock.append("Тикер: " + arr[0].get(key)[2])
         info_stock.append("Ссылка: " + arr[0].get(key)[0])
         el = arr[1][cnt]
@@ -144,6 +152,7 @@ def send_info(arr, length, chat_id):
                             info_stock.append(item1 + ": " + el[0].get(item1)[0] + "📉 " + el[0].get(item1)[1])
                         continue
                     info_stock.append(item1 + ": " + el[0].get(item1))
+            print(el[1])
             if el[1]:
                 info_stock.append("📰 Новости: ")
                 for item2 in el[1]:
@@ -151,7 +160,7 @@ def send_info(arr, length, chat_id):
             else:
                 info_stock.append("😢 Новостей пока нет ")
         inf = "\n".join(info_stock)
-        bot.send_message(chat_id, inf)
+        bot.send_message(chat_id, inf, parse_mode='html')
         cnt += 1
     if length != len(arr[0]):
         bot.send_message(chat_id, "😢 Бот не смог найти все компании, которые вы ввели (проверьте название или тикер)")

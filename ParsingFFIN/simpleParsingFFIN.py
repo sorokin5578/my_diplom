@@ -1,6 +1,7 @@
 import requests
 import re
 import datetime
+from random import choice
 from timeit import default_timer as timer
 from bs4 import BeautifulSoup as BS
 
@@ -13,10 +14,18 @@ def return_new_page_ffin(num_page):
 
 
 def get_finviz_page(ticker):
-    try:
-        return requests.get("https://finviz.com/quote.ashx?t=" + ticker)
-    except:
-        return []
+    r = ""
+    cnt = 0
+    while not (str(r) == '<Response [200]>'):
+        try:
+            if cnt > 30:
+                break
+            cnt += 1
+            prox = get_proxies()
+            user = get_user_agent()
+            return requests.get("https://finviz.com/quote.ashx?t=" + ticker, headers=user, proxies=prox)
+        except Exception as e:
+            print(e.__class__)
 
 
 def get_link_stock(find_string):
@@ -51,8 +60,8 @@ def get_link_stock(find_string):
 
 def get_info_stock(link):
     dict_news = {}
-    dict_news_finviz={}
     dict_stock = {}
+    print("info")
     try:
         r = requests.get(link)
         html = BS(r.content, 'html.parser')
@@ -60,7 +69,7 @@ def get_info_stock(link):
         try:
             ticker = html.select_one("h1", class_="quotes-company_title").text.replace(u'\n', u'').replace(u' ', u'')
         except:
-            ticker=""
+            ticker = ""
         try:
             grow_index = el[0].select_one("td.lastTradeChange").text.replace(u'\n', u'').replace(u' ', u'')
             grow = "down"
@@ -97,17 +106,25 @@ def get_info_stock(link):
         #         name_news = n.text.replace(u'\n', u' ')
         #         if delta_time(name_news[1:11]):
         #             dict_news.update({name_news: "https://ffin.ru" + n.select_one("a", href=True).get("href")})
-        finviz_page=get_finviz_page(ticker[ticker.find("(") + 1:len(ticker) - 1])
+        print("do novostey")
+        finviz_page = get_finviz_page(ticker[ticker.find("(") + 1:len(ticker) - 1])
+        print("posle")
+        print(finviz_page)
         dict_news_finviz = get_news_finviz(finviz_page)
         dict_news.update(dict_news_finviz)
     except:
-        return []
+        # return []
+        print("asdfasf")
     return [dict_stock, dict_news]
 
 
 def get_news_finviz(r):
     dict_news = {}
+    print("-" * 10)
+    print(r)
+    print("-" * 10)
     try:
+
         html = BS(r.content, 'html.parser')
         el = html.select("table.fullview-news-outer")
 
@@ -147,11 +164,29 @@ def delta_time_for_finviz_date(then):
     return False
 
 
+def get_user_agent():
+    try:
+        user_agent = open("C:\\Users\\ILLIA\\PycharmProjects\\TestParsing\\ParsingFFIN\\useragents.txt").read().split(
+            '\n')
+        return {'User-Agent': choice(user_agent)}
+    except:
+        return {}
+
+
+def get_proxies():
+    try:
+        proxy = open("C:\\Users\\ILLIA\\PycharmProjects\\TestParsing\\ParsingFFIN\\proxies.txt").read().split('\n')
+        return {'http': 'http://' + choice(proxy)}
+    except:
+        return {}
+
+
 def make_all(find_str):
     d = get_link_stock(find_str)  # ["NFLX", "Tesla Motors Inc", "Apple Inc."]
     info = []
     for key in d:
         info.append(get_info_stock(d.get(key)[0]))
+    print(info)
     return [d, info]
     # arr = [d, info]
     # cnt = 0
@@ -171,12 +206,9 @@ def make_all(find_str):
     #     cnt += 1
     #     print("-----------")
 
-
 # make_all(["ARG"])
 # make_all(["NFLX", "TSLA", "Apple Inc."])
 # make_all(["Apple Inc."])
-# d = {1: [], 2: []}
-# d.get(1).append(85)
-# d.update({1:96})
-# print(d)
-
+# for i in range(10):
+#     print(get_finviz_page("AAPL"))
+#     print("-"*10)
