@@ -16,16 +16,16 @@ def return_new_page_ffin(num_page):
 def get_finviz_page(ticker):
     r = ""
     cnt = 0
-    while not (str(r) == '<Response [200]>'):
+    while not (str(r) == '<Response [200]>') or cnt>30:
         try:
-            if cnt > 30:
-                break
             cnt += 1
             prox = get_proxies()
             user = get_user_agent()
-            return requests.get("https://finviz.com/quote.ashx?t=" + ticker, headers=user, proxies=prox)
+            r=requests.get("https://finviz.com/quote.ashx?t=" + ticker, headers=user, proxies=prox)
         except Exception as e:
             print(e.__class__)
+            continue
+    return r
 
 
 def get_link_stock(find_string):
@@ -61,7 +61,6 @@ def get_link_stock(find_string):
 def get_info_stock(link):
     dict_news = {}
     dict_stock = {}
-    print("info")
     try:
         r = requests.get(link)
         html = BS(r.content, 'html.parser')
@@ -106,23 +105,16 @@ def get_info_stock(link):
         #         name_news = n.text.replace(u'\n', u' ')
         #         if delta_time(name_news[1:11]):
         #             dict_news.update({name_news: "https://ffin.ru" + n.select_one("a", href=True).get("href")})
-        print("do novostey")
         finviz_page = get_finviz_page(ticker[ticker.find("(") + 1:len(ticker) - 1])
-        print("posle")
-        print(finviz_page)
         dict_news_finviz = get_news_finviz(finviz_page)
         dict_news.update(dict_news_finviz)
     except:
-        # return []
-        print("asdfasf")
+        return []
     return [dict_stock, dict_news]
 
 
 def get_news_finviz(r):
     dict_news = {}
-    print("-" * 10)
-    print(r)
-    print("-" * 10)
     try:
 
         html = BS(r.content, 'html.parser')
@@ -166,7 +158,7 @@ def delta_time_for_finviz_date(then):
 
 def get_user_agent():
     try:
-        user_agent = open("C:\\Users\\ILLIA\\PycharmProjects\\TestParsing\\ParsingFFIN\\useragents.txt").read().split(
+        user_agent = open("C:\\Users\\Illia\\PycharmProjects\\my_diplom\\ParsingFFIN\\useragents.txt").read().split(
             '\n')
         return {'User-Agent': choice(user_agent)}
     except:
@@ -175,7 +167,7 @@ def get_user_agent():
 
 def get_proxies():
     try:
-        proxy = open("C:\\Users\\ILLIA\\PycharmProjects\\TestParsing\\ParsingFFIN\\proxies.txt").read().split('\n')
+        proxy = open("C:\\Users\\Illia\\PycharmProjects\\my_diplom\\ParsingFFIN\\proxies.txt").read().split('\n')
         return {'http': 'http://' + choice(proxy)}
     except:
         return {}
@@ -186,7 +178,6 @@ def make_all(find_str):
     info = []
     for key in d:
         info.append(get_info_stock(d.get(key)[0]))
-    print(info)
     return [d, info]
     # arr = [d, info]
     # cnt = 0
