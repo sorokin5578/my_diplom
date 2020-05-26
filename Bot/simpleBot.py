@@ -152,7 +152,6 @@ def send_info(arr, length, chat_id):
                             info_stock.append(item1 + ": " + el[0].get(item1)[0] + "📉 " + el[0].get(item1)[1])
                         continue
                     info_stock.append(item1 + ": " + el[0].get(item1))
-            print(el[1])
             if el[1]:
                 info_stock.append("📰 Новости: ")
                 for item2 in el[1]:
