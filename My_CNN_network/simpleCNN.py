@@ -70,7 +70,7 @@ plt.xlabel('Эпоха обучения')
 plt.ylabel('Доля верных ответов')
 plt.legend()
 plt.show()
-
+print(5)
 test = make_set('test.csv')
 test_sequences = tokenizer.texts_to_sequences(test['title'])
 x_test = pad_sequences(test_sequences, maxlen=max_news_len)
