@@ -5,6 +5,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras import utils
+from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -34,12 +35,13 @@ def make_y_class(arr):
     return arr_class
 
 
-train = make_set('train.csv')
-news = train['title']
-y_train = utils.to_categorical(make_y_class(train['class']), nb_classes)
+dataset = make_set('all-data.csv')
+news = dataset['title']
+label = utils.to_categorical(make_y_class(dataset['class']), nb_classes)
+x_train, x_test, y_train, y_test = train_test_split(news, label, test_size=0.1, random_state=42)
 tokenizer = Tokenizer(num_words=num_words)
-tokenizer.fit_on_texts(news)
-sequences = tokenizer.texts_to_sequences(news)
+tokenizer.fit_on_texts(x_train)
+sequences = tokenizer.texts_to_sequences(x_train)
 x_train = pad_sequences(sequences, maxlen=max_news_len)
 model_lstm = Sequential()
 model_lstm.add(Embedding(num_words, 32, input_length=max_news_len))
@@ -69,10 +71,8 @@ plt.ylabel('Доля верных ответов')
 plt.legend()
 plt.show()
 
-test = make_set('test.csv')
-test_sequences = tokenizer.texts_to_sequences(test['title'])
+test_sequences = tokenizer.texts_to_sequences(x_test)
 x_test = pad_sequences(test_sequences, maxlen=max_news_len)
-y_test = utils.to_categorical(make_y_class(test['class']), nb_classes)
 model_lstm.load_weights(model_lstm_save_path)
 model_lstm.evaluate(x_test, y_test, verbose=1)
 

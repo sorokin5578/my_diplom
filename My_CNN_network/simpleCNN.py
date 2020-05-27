@@ -60,7 +60,7 @@ history_cnn = model_cnn.fit(x_train,
                             y_train,
                             epochs=5,
                             batch_size=128,
-                            validation_split=0.2,
+                            validation_split=0.1,
                             callbacks=[checkpoint_callback_cnn])
 plt.plot(history_cnn.history['accuracy'],
          label='Доля верных ответов на обучающем наборе')
