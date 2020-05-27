@@ -15,7 +15,7 @@ num_words = 10000
 # Максимальная длина новости
 max_news_len = 40
 # Количество классов новостей
-nb_classes = 3
+nb_classes = 2
 
 def make_set(path):
     return pd.read_csv(path,
@@ -26,10 +26,8 @@ def make_set(path):
 def make_y_class(arr):
     arr_class = []
     for i in arr:
-        if i == "neutral":
-            arr_class.append(1)
         if i == "positive":
-            arr_class.append(2)
+            arr_class.append(1)
         if i == "negative":
             arr_class.append(0)
     return arr_class
@@ -43,28 +41,27 @@ tokenizer = Tokenizer(num_words=num_words)
 tokenizer.fit_on_texts(x_train)
 sequences = tokenizer.texts_to_sequences(x_train)
 x_train = pad_sequences(sequences, maxlen=max_news_len)
-model_lstm = Sequential()
-model_lstm.add(Embedding(num_words, 32, input_length=max_news_len))
-model_lstm.add(LSTM(16))
-model_lstm.add(Dense(nb_classes, activation='softmax'))
-model_lstm.compile(optimizer='adam',
-              loss='categorical_crossentropy',
+model = Sequential()
+model.add(Embedding(num_words, 8, input_length=max_news_len))
+model.add(LSTM(32, recurrent_dropout = 0.2))
+model.add(Dense(1, activation='sigmoid'))
+model.compile(optimizer='adam',
+              loss='binary_crossentropy',
               metrics=['accuracy'])
-model_lstm.summary()
 model_lstm_save_path = 'best_model_lstm.h5'
 checkpoint_callback_lstm = ModelCheckpoint(model_lstm_save_path,
                                       monitor='val_accuracy',
                                       save_best_only=True,
                                       verbose=1)
-history_lstm = model_lstm.fit(x_train,
-                              y_train,
-                              epochs=5,
-                              batch_size=128,
-                              validation_split=0.1,
-                              callbacks=[checkpoint_callback_lstm])
-plt.plot(history_lstm.history['accuracy'],
+history = model.fit(np.asarray(x_train).astype('float32').reshape((-1,1)),
+                    np.asarray(y_train).astype('float32').reshape((-1,1)),
+                    epochs=15,
+                    batch_size=128,
+                    validation_split=0.1,
+                    callbacks=[checkpoint_callback_lstm])
+plt.plot(history.history['accuracy'],
          label='Доля верных ответов на обучающем наборе')
-plt.plot(history_lstm.history['val_accuracy'],
+plt.plot(history.history['val_accuracy'],
          label='Доля верных ответов на проверочном наборе')
 plt.xlabel('Эпоха обучения')
 plt.ylabel('Доля верных ответов')
@@ -73,7 +70,34 @@ plt.show()
 
 test_sequences = tokenizer.texts_to_sequences(x_test)
 x_test = pad_sequences(test_sequences, maxlen=max_news_len)
-model_lstm.load_weights(model_lstm_save_path)
-model_lstm.evaluate(x_test, y_test, verbose=1)
+model.load_weights(model_lstm_save_path)
+model.evaluate(x_test, y_test, verbose=1)
 
-
+text = "Director of the company was fired"
+sequence = tokenizer.texts_to_sequences([text])
+data = pad_sequences(sequence, maxlen=max_news_len)
+result = model.predict(data)
+print(text)
+print(result)
+print("-"*10)
+text = "Apple to Start Reopening Stores in Japan This Week"
+sequence = tokenizer.texts_to_sequences([text])
+data = pad_sequences(sequence, maxlen=max_news_len)
+result = model.predict(data)
+print(text)
+print(result)
+print("-"*10)
+text = "TikTok's In-App Revenue Skyrockets During Lockdowns"
+sequence = tokenizer.texts_to_sequences([text])
+data = pad_sequences(sequence, maxlen=max_news_len)
+result = model.predict(data)
+print(text)
+print(result)
+print("-"*10)
+text = "Coronavirus is propelling Netflix to new heightsbut is a crash inevitable?"
+sequence = tokenizer.texts_to_sequences([text])
+data = pad_sequences(sequence, maxlen=max_news_len)
+result = model.predict(data)
+print(text)
+print(result)
+print("-"*10)

@@ -15,7 +15,7 @@ num_words = 10000
 # Максимальная длина новости
 max_news_len = 40
 # Количество классов новостей
-nb_classes = 3
+nb_classes = 2
 
 def make_set(path):
     return pd.read_csv(path,
@@ -26,10 +26,8 @@ def make_set(path):
 def make_y_class(arr):
     arr_class = []
     for i in arr:
-        if i == "neutral":
-            arr_class.append(1)
         if i == "positive":
-            arr_class.append(2)
+            arr_class.append(1)
         if i == "negative":
             arr_class.append(0)
     return arr_class
@@ -75,3 +73,32 @@ test_sequences = tokenizer.texts_to_sequences(x_test)
 x_test = pad_sequences(test_sequences, maxlen=max_news_len)
 model_gru.load_weights(model_gru_save_path)
 model_gru.evaluate(x_test, y_test, verbose=1)
+
+text = "Director of the company was fired"
+sequence = tokenizer.texts_to_sequences([text])
+data = pad_sequences(sequence, maxlen=max_news_len)
+result = model_gru.predict(data)
+print(text)
+print(result)
+print("-"*10)
+text = "Apple to Start Reopening Stores in Japan This Week"
+sequence = tokenizer.texts_to_sequences([text])
+data = pad_sequences(sequence, maxlen=max_news_len)
+result = model_gru.predict(data)
+print(text)
+print(result)
+print("-"*10)
+text = "TikTok's In-App Revenue Skyrockets During Lockdowns"
+sequence = tokenizer.texts_to_sequences([text])
+data = pad_sequences(sequence, maxlen=max_news_len)
+result = model_gru.predict(data)
+print(text)
+print(result)
+print("-"*10)
+text = "Coronavirus is propelling Netflix to new heightsbut is a crash inevitable?"
+sequence = tokenizer.texts_to_sequences([text])
+data = pad_sequences(sequence, maxlen=max_news_len)
+result = model_gru.predict(data)
+print(text)
+print(result)
+print("-"*10)

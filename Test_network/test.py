@@ -1,6 +1,8 @@
+import re
+
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Embedding, MaxPooling1D, Conv1D, GlobalMaxPooling1D, Dropout, LSTM, GRU
+from tensorflow.keras.layers import Dense, Embedding, MaxPooling1D, Conv1D, GlobalMaxPooling1D, Dropout, LSTM, GRU, SimpleRNN
 from tensorflow.keras import utils
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
@@ -13,9 +15,7 @@ import matplotlib.pyplot as plt
 # Максимальное количество слов
 num_words = 10000
 # Максимальная длина новости
-max_news_len = 40
-# Количество классов новостей
-nb_classes = 3
+max_news_len = 70
 
 
 def make_set(path):
@@ -27,48 +27,55 @@ def make_set(path):
 
 def make_y_class(arr):
     arr_class = []
+    positive=0
+    negative=0
     for i in arr:
-        if i == "neutral":
-            arr_class.append(1)
         if i == "positive":
-            arr_class.append(2)
+            arr_class.append(1)
+            positive+=1
         if i == "negative":
             arr_class.append(0)
+            negative += 1
     return arr_class
 
+def preprocess_text(text):
+    text = text.lower().replace("ё", "е")
+    text = re.sub('((www\.[^\s]+)|(https?://[^\s]+))', 'URL', text)
+    text = re.sub('@[^\s]+', 'USER', text)
+    text = re.sub('[^a-zA-Zа-яА-Я1-9]+', ' ', text)
+    text = re.sub(' +', ' ', text)
+    return text.strip()
 
-dataset = make_set('all-data.csv')
-news = dataset['title']
-label = utils.to_categorical(make_y_class(dataset['class']), nb_classes)
-x_train, x_test, y_train, y_test = train_test_split(news, label, test_size=0.15, random_state=42)
+
+dataset = make_set('new_dataset.csv')
+news=[preprocess_text(t) for t in dataset['title']]
+label = make_y_class(dataset['class'])
+news_2, x_test, y_train, y_test = train_test_split(news, label, test_size=0.15, random_state=42)
 tokenizer = Tokenizer(num_words=num_words)
-tokenizer.fit_on_texts(x_train)
-sequences = tokenizer.texts_to_sequences(x_train)
+tokenizer.fit_on_texts(news_2)
+sequences = tokenizer.texts_to_sequences(news_2)
 x_train = pad_sequences(sequences, maxlen=max_news_len)
-model_cnn = Sequential()
-model_cnn.add(Embedding(num_words, 32, input_length=max_news_len))
-model_cnn.add(Conv1D(250, 5, padding='valid', activation='relu'))
-model_cnn.add(GlobalMaxPooling1D())
-model_cnn.add(Dense(128, activation='relu'))
-model_cnn.add(Dense(nb_classes, activation='softmax'))
-model_cnn.compile(optimizer='adam',
-                  loss='categorical_crossentropy',
-                  metrics=['accuracy'])
-model_cnn.summary()
-model_cnn_save_path = 'best_model_cnn.h5'
-checkpoint_callback_cnn = ModelCheckpoint(model_cnn_save_path,
-                                          monitor='val_accuracy',
-                                          save_best_only=True,
-                                          verbose=1)
-history_cnn = model_cnn.fit(x_train,
-                            y_train,
-                            epochs=6,
-                            batch_size=128,
-                            validation_split=0.1,
-                            callbacks=[checkpoint_callback_cnn])
-plt.plot(history_cnn.history['accuracy'],
+model = Sequential()
+model.add(Embedding(num_words, 2, input_length=max_news_len))
+model.add(SimpleRNN(8))
+model.add(Dense(1, activation='sigmoid'))
+model.compile(optimizer='rmsprop',
+              loss='binary_crossentropy',
+              metrics=['accuracy'])
+model_save_path = 'best_model.h5'
+checkpoint_callback = ModelCheckpoint(model_save_path,
+                                      monitor='val_accuracy',
+                                      save_best_only=True,
+                                      verbose=1)
+history = model.fit(np.array(x_train),
+                    np.array(y_train),
+                    epochs=10,
+                    batch_size=128,
+                    validation_split=0.25,
+                    callbacks=[checkpoint_callback])
+plt.plot(history.history['accuracy'],
          label='Доля верных ответов на обучающем наборе')
-plt.plot(history_cnn.history['val_accuracy'],
+plt.plot(history.history['val_accuracy'],
          label='Доля верных ответов на проверочном наборе')
 plt.xlabel('Эпоха обучения')
 plt.ylabel('Доля верных ответов')
@@ -77,34 +84,34 @@ plt.show()
 
 test_sequences = tokenizer.texts_to_sequences(x_test)
 x_test = pad_sequences(test_sequences, maxlen=max_news_len)
-model_cnn.load_weights(model_cnn_save_path)
-model_cnn.evaluate(x_test, y_test, verbose=1)
+model.load_weights(model_save_path)
+model.evaluate(np.array(x_test), np.array(y_test), verbose=1)
 
 text = "Director of the company was fired"
 sequence = tokenizer.texts_to_sequences([text])
 data = pad_sequences(sequence, maxlen=max_news_len)
-result = model_cnn.predict(data)
+result = model.predict(data)
 print(text)
 print(result)
 print("-"*10)
 text = "Apple to Start Reopening Stores in Japan This Week"
 sequence = tokenizer.texts_to_sequences([text])
 data = pad_sequences(sequence, maxlen=max_news_len)
-result = model_cnn.predict(data)
+result = model.predict(data)
 print(text)
 print(result)
 print("-"*10)
 text = "TikTok's In-App Revenue Skyrockets During Lockdowns"
 sequence = tokenizer.texts_to_sequences([text])
 data = pad_sequences(sequence, maxlen=max_news_len)
-result = model_cnn.predict(data)
+result = model.predict(data)
 print(text)
 print(result)
 print("-"*10)
 text = "Coronavirus is propelling Netflix to new heightsbut is a crash inevitable?"
 sequence = tokenizer.texts_to_sequences([text])
 data = pad_sequences(sequence, maxlen=max_news_len)
-result = model_cnn.predict(data)
+result = model.predict(data)
 print(text)
 print(result)
 print("-"*10)
