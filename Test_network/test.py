@@ -13,9 +13,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Максимальное количество слов
-num_words = 10000
+num_words = 15000
 # Максимальная длина новости
-max_news_len = 70
+max_news_len = 100
 
 
 def make_set(path):
@@ -46,11 +46,11 @@ def preprocess_text(text):
     text = re.sub(' +', ' ', text)
     return text.strip()
 
-
+print(5)
 dataset = make_set('new_dataset.csv')
 news=[preprocess_text(t) for t in dataset['title']]
 label = make_y_class(dataset['class'])
-news_2, x_test, y_train, y_test = train_test_split(news, label, test_size=0.15, random_state=42)
+news_2, x_test, y_train, y_test = train_test_split(news, label, test_size=0.1, random_state=10)
 tokenizer = Tokenizer(num_words=num_words)
 tokenizer.fit_on_texts(news_2)
 sequences = tokenizer.texts_to_sequences(news_2)
@@ -71,7 +71,7 @@ history = model.fit(np.array(x_train),
                     np.array(y_train),
                     epochs=10,
                     batch_size=128,
-                    validation_split=0.25,
+                    validation_split=0.2,
                     callbacks=[checkpoint_callback])
 plt.plot(history.history['accuracy'],
          label='Доля верных ответов на обучающем наборе')
