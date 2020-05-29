@@ -3,6 +3,7 @@ from telebot import types
 from Bot.Config import TOKEN
 from DBConnector.simpleDB import add_new_user, return_user, del_user
 from ParsingFFIN.simpleParsingFFIN import make_all
+from My_CNN_network.simpleCNN import call_network
 
 bot = telebot.TeleBot(TOKEN)
 res = {}
@@ -155,6 +156,13 @@ def send_info(arr, length, chat_id):
             if el[1]:
                 info_stock.append("📰 Новости: ")
                 for item2 in el[1]:
+                    forecast_num = call_network([item2])
+                    if forecast_num >= 0.5:
+                        info_stock.append("Прогноз: позитивный ✅")
+                    else:
+                        info_stock.append("Прогноз: негативный ❌")
+                    # print(item2)
+                    # print(call_network("Director of the company was fired"))
                     info_stock.append("🗞 " + item2 + " " + el[1].get(item2))
             else:
                 info_stock.append("😢 Новостей пока нет ")

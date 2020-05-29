@@ -151,7 +151,7 @@ def delta_time_for_finviz_date(then):
     now = datetime.datetime.today().strftime("%b-%d-%y %H:%M")
     if int(now[7:9]) - int(then[7:9]) == 0:
         if now[0:3] == then[0:3]:
-            if int(now[4:6]) - int(then[4:6]) < 1:
+            if int(now[4:6]) - int(then[4:6]) < 2:
                 return True
     return False
 

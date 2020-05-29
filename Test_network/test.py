@@ -1,16 +1,14 @@
-import re
-
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Embedding, MaxPooling1D, Conv1D, GlobalMaxPooling1D, Dropout, LSTM, GRU, SimpleRNN
-from tensorflow.keras import utils
+from tensorflow.keras.layers import Dense, Embedding, SimpleRNN
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras import utils
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import pickle
+import re
 
 # Максимальное количество слов
 num_words = 15000
@@ -27,16 +25,17 @@ def make_set(path):
 
 def make_y_class(arr):
     arr_class = []
-    positive=0
-    negative=0
+    positive = 0
+    negative = 0
     for i in arr:
         if i == "positive":
             arr_class.append(1)
-            positive+=1
+            positive += 1
         if i == "negative":
             arr_class.append(0)
             negative += 1
     return arr_class
+
 
 def preprocess_text(text):
     text = text.lower().replace("ё", "е")
@@ -46,72 +45,57 @@ def preprocess_text(text):
     text = re.sub(' +', ' ', text)
     return text.strip()
 
-print(5)
-dataset = make_set('new_dataset.csv')
-news=[preprocess_text(t) for t in dataset['title']]
-label = make_y_class(dataset['class'])
-news_2, x_test, y_train, y_test = train_test_split(news, label, test_size=0.1, random_state=10)
-tokenizer = Tokenizer(num_words=num_words)
-tokenizer.fit_on_texts(news_2)
-sequences = tokenizer.texts_to_sequences(news_2)
-x_train = pad_sequences(sequences, maxlen=max_news_len)
-model = Sequential()
-model.add(Embedding(num_words, 2, input_length=max_news_len))
-model.add(SimpleRNN(8))
-model.add(Dense(1, activation='sigmoid'))
-model.compile(optimizer='rmsprop',
-              loss='binary_crossentropy',
-              metrics=['accuracy'])
-model_save_path = 'best_model.h5'
-checkpoint_callback = ModelCheckpoint(model_save_path,
-                                      monitor='val_accuracy',
-                                      save_best_only=True,
-                                      verbose=1)
-history = model.fit(np.array(x_train),
-                    np.array(y_train),
-                    epochs=10,
-                    batch_size=128,
-                    validation_split=0.2,
-                    callbacks=[checkpoint_callback])
-plt.plot(history.history['accuracy'],
-         label='Доля верных ответов на обучающем наборе')
-plt.plot(history.history['val_accuracy'],
-         label='Доля верных ответов на проверочном наборе')
-plt.xlabel('Эпоха обучения')
-plt.ylabel('Доля верных ответов')
-plt.legend()
-plt.show()
 
-test_sequences = tokenizer.texts_to_sequences(x_test)
-x_test = pad_sequences(test_sequences, maxlen=max_news_len)
-model.load_weights(model_save_path)
-model.evaluate(np.array(x_test), np.array(y_test), verbose=1)
+def make_network():
+    dataset = make_set('C:\\Users\\Illia\\PycharmProjects\\my_diplom\\Test_network\\new_dataset.csv')
+    news = [preprocess_text(t) for t in dataset['title']]
+    label = make_y_class(dataset['class'])
+    news_2, x_test, y_train, y_test = train_test_split(news, label, test_size=0.1, random_state=38)
+    tokenizer = Tokenizer(num_words=num_words)
+    tokenizer.fit_on_texts(news_2)
+    with open('tokenizer.pickle', 'wb') as handle:
+        pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    sequences = tokenizer.texts_to_sequences(news_2)
+    x_train = pad_sequences(sequences, maxlen=max_news_len)
+    model = Sequential()
+    model.add(Embedding(num_words, 2, input_length=max_news_len))
+    model.add(SimpleRNN(8))
+    model.add(Dense(1, activation='sigmoid'))
+    model.compile(optimizer='rmsprop',
+                  loss='binary_crossentropy',
+                  metrics=['accuracy'])
+    model_save_path = 'best_model.h5'
+    checkpoint_callback = ModelCheckpoint(model_save_path,
+                                          monitor='val_accuracy',
+                                          save_best_only=True,
+                                          verbose=1)
+    history = model.fit(np.array(x_train),
+                        np.array(y_train),
+                        epochs=10,
+                        batch_size=128,
+                        validation_split=0.2,
+                        callbacks=[checkpoint_callback])
+    plt.plot(history.history['accuracy'],
+             label='Доля верных ответов на обучающем наборе')
+    plt.plot(history.history['val_accuracy'],
+             label='Доля верных ответов на проверочном наборе')
+    plt.xlabel('Эпоха обучения')
+    plt.ylabel('Доля верных ответов')
+    plt.legend()
+    plt.show()
 
-text = "Director of the company was fired"
-sequence = tokenizer.texts_to_sequences([text])
-data = pad_sequences(sequence, maxlen=max_news_len)
-result = model.predict(data)
-print(text)
-print(result)
-print("-"*10)
-text = "Apple to Start Reopening Stores in Japan This Week"
-sequence = tokenizer.texts_to_sequences([text])
-data = pad_sequences(sequence, maxlen=max_news_len)
-result = model.predict(data)
-print(text)
-print(result)
-print("-"*10)
-text = "TikTok's In-App Revenue Skyrockets During Lockdowns"
-sequence = tokenizer.texts_to_sequences([text])
-data = pad_sequences(sequence, maxlen=max_news_len)
-result = model.predict(data)
-print(text)
-print(result)
-print("-"*10)
-text = "Coronavirus is propelling Netflix to new heightsbut is a crash inevitable?"
-sequence = tokenizer.texts_to_sequences([text])
-data = pad_sequences(sequence, maxlen=max_news_len)
-result = model.predict(data)
-print(text)
-print(result)
-print("-"*10)
+    test_sequences = tokenizer.texts_to_sequences(x_test)
+    x_test = pad_sequences(test_sequences, maxlen=max_news_len)
+    model.load_weights(model_save_path)
+    model.evaluate(np.array(x_test), np.array(y_test), verbose=1)
+
+    text = ["Director of the company was fired", "Apple to Start Reopening Stores in Japan This Week",
+            "TikTok's In-App Revenue Skyrockets During Lockdowns",
+            "Coronavirus is propelling Netflix to new heights but is a crash inevitable?"]
+    new_text=[preprocess_text(t) for t in text]
+    sequence = tokenizer.texts_to_sequences(new_text)
+    data = pad_sequences(sequence, maxlen=max_news_len)
+    result = model.predict(data)
+    print(result)
+
+make_network()

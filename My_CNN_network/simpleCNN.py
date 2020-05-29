@@ -1,81 +1,70 @@
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Embedding, MaxPooling1D, Conv1D, GlobalMaxPooling1D, Dropout, LSTM, GRU
-from tensorflow.keras import utils
+import pickle
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras import utils
+from tensorflow.python.keras.layers import Embedding, SimpleRNN, Dense
+from tensorflow.python.keras.models import Sequential
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-
+import re
 # Максимальное количество слов
-num_words = 10000
+num_words = 15000
 # Максимальная длина новости
-max_news_len = 40
-# Количество классов новостей
-nb_classes = 3
+max_news_len = 100
+
 
 def make_set(path):
     return pd.read_csv(path,
-                    header=None,
-                    names=['class', 'title'],
-                    encoding='latin-1')
+                       header=None,
+                       names=['class', 'title'],
+                       encoding='latin-1')
+
 
 def make_y_class(arr):
     arr_class = []
+    positive = 0
+    negative = 0
     for i in arr:
-        if i == "neutral":
-            arr_class.append(1)
         if i == "positive":
-            arr_class.append(2)
+            arr_class.append(1)
+            positive += 1
         if i == "negative":
             arr_class.append(0)
+            negative += 1
     return arr_class
 
 
-train = make_set('train.csv')
-news = train['title']
-y_train = utils.to_categorical(make_y_class(train['class']), nb_classes)
-tokenizer = Tokenizer(num_words=num_words)
-tokenizer.fit_on_texts(news)
-sequences = tokenizer.texts_to_sequences(news)
-x_train = pad_sequences(sequences, maxlen=max_news_len)
-model_cnn = Sequential()
-model_cnn.add(Embedding(num_words, 32, input_length=max_news_len))
-model_cnn.add(Conv1D(250, 5, padding='valid', activation='relu'))
-model_cnn.add(GlobalMaxPooling1D())
-model_cnn.add(Dense(128, activation='relu'))
-model_cnn.add(Dense(nb_classes, activation='softmax'))
-model_cnn.compile(optimizer='adam',
-              loss='categorical_crossentropy',
-              metrics=['accuracy'])
-model_cnn.summary()
-model_cnn_save_path = 'best_model_cnn.h5'
-checkpoint_callback_cnn = ModelCheckpoint(model_cnn_save_path,
-                                      monitor='val_accuracy',
-                                      save_best_only=True,
-                                      verbose=1)
-history_cnn = model_cnn.fit(x_train,
-                            y_train,
-                            epochs=5,
-                            batch_size=128,
-                            validation_split=0.1,
-                            callbacks=[checkpoint_callback_cnn])
-plt.plot(history_cnn.history['accuracy'],
-         label='Доля верных ответов на обучающем наборе')
-plt.plot(history_cnn.history['val_accuracy'],
-         label='Доля верных ответов на проверочном наборе')
-plt.xlabel('Эпоха обучения')
-plt.ylabel('Доля верных ответов')
-plt.legend()
-plt.show()
-print(5)
-test = make_set('test.csv')
-test_sequences = tokenizer.texts_to_sequences(test['title'])
-x_test = pad_sequences(test_sequences, maxlen=max_news_len)
-y_test = utils.to_categorical(make_y_class(test['class']), nb_classes)
-model_cnn.load_weights(model_cnn_save_path)
-model_cnn.evaluate(x_test, y_test, verbose=1)
+def preprocess_text(text):
+    text = text.lower()
+    text = re.sub('((www\.[^\s]+)|(https?://[^\s]+))', 'URL', text)
+    text = re.sub('@[^\s]+', 'USER', text)
+    text = re.sub('[^a-zA-Zа-яА-Я1-9]+', ' ', text)
+    text = re.sub(' +', ' ', text)
+    text = re.sub('([A-Za-z]{3}\-\d{2}-\d{2}\s)?\d{2}\:\d{2}[A|P][M]', ' ', text)
+    return text.strip()
 
 
+def call_network(text):
+    model = Sequential()
+    model.add(Embedding(num_words, 2, input_length=max_news_len))
+    model.add(SimpleRNN(8))
+    model.add(Dense(1, activation='sigmoid'))
+    model.compile(optimizer='rmsprop',
+                  loss='binary_crossentropy',
+                  metrics=['accuracy'])
+    model_save_path='C:\\Users\\Illia\\PycharmProjects\\my_diplom\\Test_network\\best_model\\best_mode_77.h5'
+    model.load_weights(model_save_path)
+    with open('C:\\Users\\Illia\\PycharmProjects\\my_diplom\\Test_network\\best_model\\tokenizer.pickle', 'rb') as handle:
+        tokenizer = pickle.load(handle)
+    new_text=[preprocess_text(t) for t in text]
+    sequence = tokenizer.texts_to_sequences(new_text)
+    data = pad_sequences(sequence, maxlen=max_news_len)
+    result = model.predict(data)
+    return result
+
+
+# text = ["Director of the company was fired", "Apple to Start Reopening Stores in Japan This Week", "TikTok's In-App Revenue Skyrockets During Lockdowns", "Coronavirus is propelling Netflix to new heights but is a crash inevitable?"]
+#
+#
+# text2=["May-26-20 01:49AM  	Dow Jones Futures Jump; Five Titans Near Buy Points In Coronavirus Stock Market Rally Investor's Business Daily",
+#        "May-25-20 01:02PM  	Gates Foundation Buys Up Amazon, Apple, Twitter Stock; Trims Berkshire Hathaway Stake SmarterAnalyst",
+#        "12:45PM  	Dow Jones Stocks To Buy And Watch In May 2020; Apple, Microsoft Approach New Buy Points Investor's Business Daily",
+#        "07:58AM  	Apples Key Weaknesses Investopedia"]
+# print(call_network(text2))
